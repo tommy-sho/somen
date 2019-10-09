@@ -9,6 +9,8 @@ import (
 	"os"
 )
 
+const divide uint = 360
+
 // 画像を単色に染める
 func fillRect(img *image.RGBA, col color.Color) {
 	rect := img.Rect
@@ -54,13 +56,12 @@ func main() {
 	circle.drawBounds(img, color.RGBA{255, 0, 0, 0})
 	colors := GetFullColor()
 	colors.shuffle()
+	colors.QuickSort()
+
 	for c, col := range colors {
 		rad := float64(c) / float64(len(colors)) * 2 * math.Pi
 		circle.drawRadius(img, rad, color.RGBA{col.Red, col.Green, col.Blue, 0})
 	}
-	//for c := 0.0; c < math.Pi*2; c += 0.01 {
-	//	circle.drawRadius(img, float64(circle.r)*(c/math.Pi*2), color.RGBA{colors[0].Red, colors[0].Green, colors[0].Blue, 0})
-	//}
 
 	// 出力用ファイル作成(エラー処理は略)
 	file, _ := os.Create("sample.jpg")
@@ -77,13 +78,26 @@ type Color struct {
 	Red   uint8
 	Green uint8
 	Blue  uint8
+	Value uint64
 }
 
 type Colors []Color
 
+func (c Colors) QuickSort() {
+	eNum := len(c)
+	for i := eNum; i > 0; i-- {
+		for j := 0; j < i-1; j++ {
+			if c[j].Value > c[j+1].Value {
+				c[j], c[j+1] = c[j+1], c[j]
+			}
+		}
+	}
+}
+
 func GetFullColor() Colors {
 	colors := Colors{}
-	for c := 0.0; c < math.Pi*2; c += 0.01 {
+	count := uint64(0)
+	for c := 0.0; c < math.Pi*2; c += math.Pi / float64(divide) {
 		green := calculateGreen(c)
 		red := calculateRed(c)
 		blue := calculateBlue(c)
@@ -91,8 +105,10 @@ func GetFullColor() Colors {
 			Red:   red,
 			Green: green,
 			Blue:  blue,
+			Value: count,
 		}
 		colors = append(colors, c)
+		count++
 	}
 	return colors
 }
